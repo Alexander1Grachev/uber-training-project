@@ -3,8 +3,10 @@ import express, { Express, Request, Response } from 'express';
 import { db } from './db/in-memory.db';
 import { Driver } from './drivers/types/driver';
 import { HttpStatus } from './core/const/http-statuses';
-import { testingRouter } from './testing/testing.routers';
+import { testingRouter } from './testing/router/testing.routers';
 import { driversRouter } from './drivers/router/drivers.router';
+import { setupSwagger } from './core/swagger/setup-swagger';
+import { TESTING_PATH, DRIVERS_PATH } from './core/paths/paths';
 export const setupApp = (app: Express) => {
   app.use(express.json()); // middleware для парсинга JSON
 
@@ -13,7 +15,8 @@ export const setupApp = (app: Express) => {
     res.status(200).send('Hello world!');
   });
 
-  app.use('/drivers', driversRouter);
-  app.use('/testing', testingRouter);
+  app.use(DRIVERS_PATH, driversRouter);
+  app.use(TESTING_PATH, testingRouter);
+  setupSwagger(app);
   return app; // Возвращает настроенное приложение
 };

@@ -1,17 +1,10 @@
 import { Router } from 'express';
-import {
-  createDrivers,
-  deleteDriversById,
-  getDrivers,
-  getDriversById,
-  updateDriversById,
-} from '../../drivers/controllers/drivers.controller';
+import { driversController } from '../../drivers/controllers/drivers.controller';
 
 export const driversRouter = Router();
 
-driversRouter.get('/:id', getDriversById);
-driversRouter.put('/:id', updateDriversById);
-driversRouter.delete('/:id', deleteDriversById);
-
-driversRouter.get('/', getDrivers);
-driversRouter.post('/', createDrivers);
+driversRouter.post('/', driversController.create);
+driversRouter.get('/', driversController.getList);
+driversRouter.get('/:id', driversController.getOne);
+driversRouter.put('/:id', driversController.update);
+driversRouter.delete('/:id', driversController.delete);

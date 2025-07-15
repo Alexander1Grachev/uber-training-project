@@ -22,7 +22,7 @@ describe('Driver API', () => {
   };
 
   beforeAll(async () => {
-    await request(app).delete('/testing/all-data').expect(HttpStatus.NoContent);
+    await request(app).delete('/api/testing/all-data').expect(HttpStatus.NoContent);
   });
 
   it('Should return 200 - GET /', async () => {
@@ -31,7 +31,7 @@ describe('Driver API', () => {
     expect(response.text).toBe('Hello world!');
   });
 
-  it('should create driver; POST /drivers', async () => {
+  it('should create driver; POST /api/drivers', async () => {
     // → Тест создания водителя
     const newDriver: DriverInputDto = {
       // → Данные для запроса (дублирование для наглядности)
@@ -42,40 +42,40 @@ describe('Driver API', () => {
     };
 
     await request(app)
-      .post('/drivers') // → POST-запрос на создание
+      .post('/api/drivers') // → POST-запрос на создание
       .send(newDriver) // → Отправка данных
       .expect(201); // → Ожидаем статус 201 (Created)
   });
 
-  it('should return drivers list; GET /drivers', async () => {
+  it('should return drivers list; GET /api/drivers', async () => {
     // → Тест получения списка
     await request(app) // → Создаем первого водителя
-      .post('/drivers')
+      .post('/api/drivers')
       .send({ ...testDriverData, name: 'Another Driver' })
       .expect(201);
 
     await request(app) // → Создаем второго водителя
-      .post('/drivers')
+      .post('/api/drivers')
       .send({ ...testDriverData, name: 'Another Driver2' })
       .expect(201);
 
     const driverListResponse = await request(app) // → GET-запрос на получение списка
-      .get('/drivers')
+      .get('/api/drivers')
       .expect(200); // → Ожидаем статус 200 (OK)
 
     expect(driverListResponse.body).toBeInstanceOf(Array); // → Проверяем, что ответ — массив
     expect(driverListResponse.body.length).toBeGreaterThanOrEqual(2); // → Должно быть ≥2 водителей
   });
 
-  it('should return driver by id; GET /drivers/:id', async () => {
+  it('should return driver by id; GET /api/drivers/:id', async () => {
     // → Тест получения по ID
     const createResponse = await request(app) // → Сначала создаем водителя
-      .post('/drivers')
+      .post('/api/drivers')
       .send({ ...testDriverData, name: 'Another Driver' })
       .expect(201);
 
     const getResponse = await request(app) // → Запрашиваем его по ID
-      .get(`/drivers/${createResponse.body.id}`) // → ID берем из ответа при создании
+      .get(`/api/drivers/${createResponse.body.id}`) // → ID берем из ответа при создании
       .expect(200);
 
     expect(getResponse.body).toEqual({
