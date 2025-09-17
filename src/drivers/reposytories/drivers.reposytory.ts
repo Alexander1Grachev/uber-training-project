@@ -1,42 +1,58 @@
 import { Driver } from '../types/driver';
-import { db } from '../../db/in-memory.db';
 import { DriverInputDto } from '../dto/driver.input-dto';
-import { driversController } from '../controllers/drivers.controller';
+import { driverCollection } from '../../db/mongo.db';
+import { ObjectId, WithId } from 'mongodb';
 
 export const driversReposytory = {
-  findAll(): Driver[] {
-    return db.drivers;
+  async findAll(): Promise<WithId<Driver>[]> {
+    return driverCollection.find().toArray();
   },
 
-  findById(id: number): Driver | null {
-    return db.drivers.find((d) => d.id === id) ?? null;
+  async findById(id: string): Promise<WithId<Driver> | null> {
+    return driverCollection.findOne({ _id: new ObjectId(id) });
   },
-  create(newDriver: Driver): Driver {
-    db.drivers.push(newDriver);
-    return newDriver;
+
+  async create(newDriver: Driver): Promise<WithId<Driver>> {
+    const insertResult = await driverCollection.insertOne(newDriver);
+    return { ...newDriver, _id: insertResult.insertedId };
   },
-  updateById(id: number, dto: DriverInputDto): void {
-    const driver = db.drivers.find((d) => d.id === id);
-    if (!driver) {
+
+  async update(id: string, dto: DriverInputDto): Promise<void> {
+    const updateResult = await driverCollection.updateOne(
+      {
+        _id: new ObjectId(id),
+      },
+      {
+        $set: {
+          name: dto.name,
+          phoneNumber: dto.phoneNumber,
+          email: dto.email,
+          vehicle: {
+            make: dto.vehicleMake,
+            model: dto.vehicleModel,
+            year: dto.vehicleYear,
+            licensePlate: dto.vehicleLicensePlate,
+            description: dto.vehicleDescription,
+            features: dto.vehicleFeatures,
+          },
+        },
+      },
+    );
+
+    if (updateResult.matchedCount < 1) {
       throw new Error('Driver not exist');
     }
-
-    driver.name = dto.name;
-    driver.phoneNumber = dto.phoneNumber;
-    driver.email = dto.email;
-    driver.vehicleMake = dto.vehicleMake;
-    driver.vehicleModel = dto.vehicleModel;
-    driver.vehicleYear = dto.vehicleYear;
-    driver.vehicleLicensePlate = dto.vehicleLicensePlate;
-    driver.vehicleDescription = dto.vehicleDescription;
-    driver.vehicleFeatures = dto.vehicleFeatures;
     return;
   },
-  delete(id: number): void {
-    const index = db.drivers.findIndex((v) => v.id === id);
-    if (index === -1) {
+
+  async delete(id: string): Promise<void> {
+    const deleteResult = await driverCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    if (deleteResult.deletedCount < 1) {
       throw new Error('Driver not exist');
     }
-    db.drivers.splice(index, 1);
+    return;
   },
 };

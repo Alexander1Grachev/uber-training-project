@@ -1,5 +1,5 @@
 
-export type ValidationError = {
+export type ValidationErrorType = {
   field: string;
   message: string;
 };

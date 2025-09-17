@@ -5,15 +5,17 @@ export enum VehicleFeature {
 }
 
 export type Driver = {
-  id: number;
+  // id: string; <- уникальный тип данных ObjectId генерируется сам
   name: string;
   phoneNumber: string;
   email: string;
-  vehicleMake: string; // e.g., Toyota
-  vehicleModel: string; // e.g., Camry
-  vehicleYear: number;
-  vehicleLicensePlate: string;
-  vehicleDescription: string | null;
-  vehicleFeatures: VehicleFeature[];
+  vehicle: {
+    make: string; // e.g., Toyota
+    model: string; // e.g., Camry
+    year: number;
+    licensePlate: string;
+    description: string | null;
+    features: VehicleFeature[];
+  };
   createdAt: Date;
 };
