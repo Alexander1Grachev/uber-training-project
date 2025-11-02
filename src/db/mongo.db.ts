@@ -1,6 +1,6 @@
 import { Collection, Db, MongoClient } from 'mongodb';
-import { Driver } from '../drivers/types/driver';
-import { Ride } from '../rides/types/ride';
+import { Driver } from '../drivers/domain/driver';
+import { Ride } from '../rides/domain/ride';
 import { SETTINGS } from '../core/settings/settings';
 
 const DRIVER_COLLECTION_NAME = 'drivers';
@@ -15,7 +15,6 @@ export async function runDB(url: string): Promise<void> {
   console.log('🔗 Connecting to database:', url);
   client = new MongoClient(url);
 
-
   try {
     await client.connect(); // ПОДКЛЮЧЕНИЕ ПЕРВЫМ!
     console.log('✅ MongoDB client connected');
@@ -29,7 +28,7 @@ export async function runDB(url: string): Promise<void> {
 
     console.log('✅ Collections initialized:', {
       drivers: !!driverCollection,
-      rides: !!rideCollection
+      rides: !!rideCollection,
     });
 
     await db.command({ ping: 1 });

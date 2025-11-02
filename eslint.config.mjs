@@ -1,7 +1,10 @@
 //ESLint — инструмента, который проверяет код на ошибки,
 // стиль и потенциальные баги.
 
+import prettierPlugin from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
+import typescriptPlugin from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
 
 export default [
   {
@@ -12,26 +15,16 @@ export default [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      parser: '@typescript-eslint/parser',
+      parser: typescriptParser,
     },
     plugins: {
-      '@typescript-eslint': require('@typescript-eslint/eslint-plugin'),
+      '@typescript-eslint': typescriptPlugin,
+      prettier: prettierPlugin,
     },
     rules: {
+      'prettier/prettier': 'error',
       '@typescript-eslint/no-unused-vars': 'warn',
-      'eqeqeq': ['error', 'always'],
-    },
-  },
-  {
-    // Отдельный блок для интеграции Prettier
-    files: ['**/*.{ts,js}'],
-    plugins: {
-      'prettier': require('eslint-plugin-prettier'),
-    },
-    rules: {
-      'prettier/prettier': ['error', {
-        endOfLine: 'auto',
-      }],
+      eqeqeq: ['error', 'always'],
     },
   },
   prettierConfig,

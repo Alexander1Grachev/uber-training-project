@@ -2,31 +2,33 @@
 import request from 'supertest';
 import { HttpStatus } from '../../../src/core/const/http-statuses';
 import { Express } from 'express';
-import { RideInputDto } from '../../../src/rides/dto/ride-input.dto';
 import { createDriver } from '../drivers/create-driver';
 import { generateBasicAuthToken } from '../generate-admin-auth-token';
 import { RIDES_PATH } from '../../../src/core/paths/paths';
 import { getRideDto } from './get-ride-dto';
-import { RideViewModel } from '../../../src/rides/types/ride-view-model';
+import { RideOutput } from '../../../src/rides/routes/output/ride.output';
+import { ResourceType } from '../../../src/core/types/resource-type';
+import { RideAttributes } from '../../../src/rides/application/dtos/ride-attributes';
 
 export async function createRide(
-    app: Express,
-    rideDto?: RideInputDto,
-): Promise<RideViewModel> {
-    console.log('🚕 Creating driver for ride...');
-    const driver = await createDriver(app);
-    console.log('✅ Driver created for ride:', driver.id);
+  app: Express,
+  rideDto?: RideAttributes,
+): Promise<RideOutput> {
+  const driver = await createDriver(app);
 
-    const defaultRideData = getRideDto(driver.id);
-    const testRideData = { ...defaultRideData, ...rideDto };
+  const defaultRideData = getRideDto(driver.data.id);
+  const testRideData = {
+    data: {
+      type: ResourceType.Rides,
+      attributes: { ...defaultRideData, ...rideDto },
+    },
+  };
 
-    console.log('🚖 Creating ride for driver:', driver.id);
-    const createdRideResponse = await request(app)
-        .post(RIDES_PATH)
-        .set('Authorization', generateBasicAuthToken())
-        .send(testRideData)
-        .expect(HttpStatus.Created);
+  const createdRideResponse = await request(app)
+    .post(RIDES_PATH)
+    .set('Authorization', generateBasicAuthToken())
+    .send(testRideData)
+    .expect(HttpStatus.Created);
 
-    console.log('✅ Ride created with ID:', createdRideResponse.body.id);
-    return createdRideResponse.body;
+  return createdRideResponse.body;
 }

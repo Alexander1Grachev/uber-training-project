@@ -6,21 +6,33 @@ import { getDriverHandler } from './handlers/get-driver.handler';
 import { updateDriverHandler } from './handlers/update-driver.handler';
 import { idValidation } from '../../core/middelwares/validation/params-id.validation-middleware';
 import { inputValidationResultMiddleware } from '../../core/middelwares/validation/input-validtion-result.middleware';
-import { driverInputDtoValidation } from '../validation/driver.input-dto.validation-middlewares';
+import { driverCreateInputValidation } from '../validation/driver.input-dto.validation-middlewares';
+import { driverUpdateInputValidation } from '../validation/driver.input-dto.validation-middlewares';
+
 import { superAdminGuardMiddleware } from '../../auth/middelewares/super-admin.guard-middleware';
+import { paginationAndSortingValidation } from '../../core/middelwares/query-pagination-sorting.validation-middleware';
+import { DriverSortField } from './input/driver-sort-field';
+import { RideSortField } from '../../rides/routes/input/ride-sort-field';
+import { getDriverRideListHandler } from './handlers/get-driver-ride-list.handler';
 
 export const driversRouter = Router({});
 
+//middleware на весь маршрут
 driversRouter.use(superAdminGuardMiddleware);
 
 driversRouter
-  .get('', getDriverListHandler)
+  .get(
+    '',
+    paginationAndSortingValidation(DriverSortField),
+    inputValidationResultMiddleware,
+    getDriverListHandler,
+  )
 
   .get('/:id', idValidation, inputValidationResultMiddleware, getDriverHandler)
 
   .post(
     '',
-    driverInputDtoValidation,
+    driverCreateInputValidation,
     inputValidationResultMiddleware,
     createDriverHandler,
   )
@@ -28,7 +40,7 @@ driversRouter
   .put(
     '/:id',
     idValidation,
-    driverInputDtoValidation,
+    driverUpdateInputValidation,
     inputValidationResultMiddleware,
     updateDriverHandler,
   )
@@ -38,4 +50,12 @@ driversRouter
     idValidation,
     inputValidationResultMiddleware,
     deleteDriverHandler,
+  )
+
+  .get(
+    '/:id/rides',
+    idValidation,
+    paginationAndSortingValidation(RideSortField),
+    inputValidationResultMiddleware,
+    getDriverRideListHandler,
   );

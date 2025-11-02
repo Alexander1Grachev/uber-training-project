@@ -5,33 +5,32 @@ import { driverCollection, rideCollection } from '../../db/mongo.db';
 export const testingRouter = Router({});
 
 testingRouter.delete('/all-data', async (req: Request, res: Response) => {
-  console.log('🔄 Testing endpoint called: /all-data');
-  console.log('📊 Collections status:', {
-    rideCollection: rideCollection ? `exists (${rideCollection.collectionName})` : 'NULL',
-    driverCollection: driverCollection ? `exists (${driverCollection.collectionName})` : 'NULL'
-  });
+  console.log('🧹 Testing endpoint: clearing all data...');
 
-  if (!rideCollection || !driverCollection) {
-    console.error('❌ Collections not initialized - cannot clear database');
-    res.status(HttpStatus.InternalServerError).send('❌ Collections not initialized');
-    return;
+  // логи перед очисткой
+  const driversBefore = await driverCollection.countDocuments();
+  const ridesBefore = await rideCollection.countDocuments();
+  console.log(
+    `📊 Before cleanup - Drivers: ${driversBefore}, Rides: ${ridesBefore}`,
+  );
+
+  // Очистка (нужно передать пустой объект)
+  await Promise.all([
+    rideCollection.deleteMany({}),
+    driverCollection.deleteMany({}),
+  ]);
+
+  // логи после очистки
+  const driversAfter = await driverCollection.countDocuments();
+  const ridesAfter = await rideCollection.countDocuments();
+  console.log(
+    `📊 After cleanup - Drivers: ${driversAfter}, Rides: ${ridesAfter}`,
+  );
+
+  if (driversAfter > 0 || ridesAfter > 0) {
+    console.error('❌ Database was not cleared properly!');
   }
 
-  try {
-    console.log('🗑️ Starting database cleanup...');
-    const result = await Promise.all([
-      rideCollection.deleteMany({}),
-      driverCollection.deleteMany({}),
-    ]);
-
-    console.log('✅ Database cleared successfully:', {
-      ridesDeleted: result[0].deletedCount,
-      driversDeleted: result[1].deletedCount
-    });
-
-    res.sendStatus(HttpStatus.NoContent);
-  } catch (error) {
-    console.error('❌ Error clearing database:', error);
-    res.status(HttpStatus.InternalServerError).send('Internal Server Error');
-  }
+  console.log('✅ Database cleared via testing endpoint');
+  res.sendStatus(HttpStatus.NoContent);
 });

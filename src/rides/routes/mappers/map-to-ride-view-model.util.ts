@@ -1,10 +1,14 @@
 import { WithId } from 'mongodb';
-import { Ride } from '../../types/ride';
-import { RideViewModel } from '../../types/ride-view-model';
+import { Ride } from '../../domain/ride';
+import { RideOutput } from '../output/ride.output';
+import { ResourceType } from '../../../core/types/resource-type';
 
-export function mapToRideViewModelUtil(ride: WithId<Ride>): RideViewModel {
-    return {
-        id: ride._id.toString(),
+export function mapToRideOutputUtil(ride: WithId<Ride>): RideOutput {
+  return {
+    data: {
+      type: ResourceType.Rides,
+      id: ride._id.toString(),
+      attributes: {
         clientName: ride.clientName,
         driver: ride.driver,
         vehicle: ride.vehicle,
@@ -13,5 +17,7 @@ export function mapToRideViewModelUtil(ride: WithId<Ride>): RideViewModel {
         startedAt: ride.startedAt,
         finishedAt: ride.finishedAt,
         addresses: ride.addresses,
-    };
+      },
+    },
+  };
 }

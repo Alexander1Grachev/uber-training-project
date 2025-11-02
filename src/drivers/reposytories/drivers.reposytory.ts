@@ -1,23 +1,71 @@
-import { Driver } from '../types/driver';
-import { DriverInputDto } from '../dto/driver.input-dto';
+import { Driver } from '../domain/driver';
 import { driverCollection } from '../../db/mongo.db';
 import { ObjectId, WithId } from 'mongodb';
+import { ReposytoryNotFoundError } from '../../core/errors/repository-not-found.error';
+import { DriverAttributes } from '../application/dtos/driver-attributes';
+import { DriverQueryInput } from '../routes/input/driver-query.input';
 
 export const driversReposytory = {
-  async findAll(): Promise<WithId<Driver>[]> {
-    return driverCollection.find().toArray();
+  async findMany(
+    queryDto: DriverQueryInput,
+  ): Promise<{ items: WithId<Driver>[]; totalCount: number }> {
+    const {
+      pageNumber,
+      pageSize,
+      sortBy,
+      sortDirection,
+      searchDriverNameTerm,
+      searchDriverEmailTerm,
+      searchVehicleMakeTerm,
+    } = queryDto;
+
+    const skip = (pageNumber - 1) * pageSize;
+    const filter: any = {};
+
+    if (searchDriverNameTerm) {
+      filter.name = { $regex: searchDriverNameTerm, $options: 'i' };
+    }
+
+    if (searchDriverEmailTerm) {
+      filter.email = { $regex: searchDriverEmailTerm, $options: 'i' };
+    }
+
+    if (searchVehicleMakeTerm) {
+      filter['vehicle.make'] = { $regex: searchVehicleMakeTerm, $options: 'i' };
+    }
+
+    const items = await driverCollection
+      .find(filter)
+      .sort({ [sortBy]: sortDirection })
+      .skip(skip)
+      .limit(pageSize)
+      .toArray();
+
+    const totalCount = await driverCollection.countDocuments(filter);
+
+    return { items, totalCount };
   },
 
   async findById(id: string): Promise<WithId<Driver> | null> {
     return driverCollection.findOne({ _id: new ObjectId(id) });
   },
 
-  async create(newDriver: Driver): Promise<WithId<Driver>> {
-    const insertResult = await driverCollection.insertOne(newDriver);
-    return { ...newDriver, _id: insertResult.insertedId };
+  async findByIdOrFail(id: string): Promise<WithId<Driver>> {
+    const res = await driverCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!res) {
+      throw new ReposytoryNotFoundError('Driver not exist');
+    }
+    return res;
   },
 
-  async update(id: string, dto: DriverInputDto): Promise<void> {
+  async create(newDriver: Driver): Promise<string> {
+    const insertResult = await driverCollection.insertOne(newDriver);
+
+    return insertResult.insertedId.toString();
+  },
+
+  async update(id: string, dto: DriverAttributes): Promise<void> {
     const updateResult = await driverCollection.updateOne(
       {
         _id: new ObjectId(id),
@@ -40,8 +88,9 @@ export const driversReposytory = {
     );
 
     if (updateResult.matchedCount < 1) {
-      throw new Error('Driver not exist');
+      throw new ReposytoryNotFoundError('Driver not exist');
     }
+
     return;
   },
 
@@ -51,8 +100,9 @@ export const driversReposytory = {
     });
 
     if (deleteResult.deletedCount < 1) {
-      throw new Error('Driver not exist');
+      throw new ReposytoryNotFoundError('Driver not exist');
     }
+
     return;
   },
 };

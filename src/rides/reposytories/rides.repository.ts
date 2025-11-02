@@ -1,46 +1,89 @@
-import { Ride } from '../types/ride';
+import { Ride } from '../domain/ride';
 import { rideCollection } from '../../db/mongo.db';
 import { ObjectId, WithId } from 'mongodb';
-
+import { RideQueryInput } from '../../rides/routes/input/ride-query.input';
+import { ReposytoryNotFoundError } from '../../core/errors/repository-not-found.error';
 
 export const ridesReposytory = {
-    async findAll(): Promise<WithId<Ride>[]> {
-        return rideCollection.find().toArray();
-    },
+  async findMany(
+    queryDto: RideQueryInput,
+  ): Promise<{ items: WithId<Ride>[]; totalCount: number }> {
+    const { pageNumber, pageSize, sortBy, sortDirection } = queryDto;
+    const filter = {};
+    const skip = (pageNumber - 1) * pageSize;
 
-    async findById(id: string): Promise<WithId<Ride> | null> {
-        return rideCollection.findOne({ _id: new ObjectId(id) });
-    },
+    const [items, totalCount] = await Promise.all([
+      rideCollection
+        .find(filter)
+        .sort({ [sortBy]: sortDirection })
+        .skip(skip)
+        .limit(pageSize)
+        .toArray(),
+      rideCollection.countDocuments(filter),
+    ]);
+    return { items, totalCount };
+  },
 
-    async findActiveRideByDriverId(
-        driverId: string,
-    ): Promise<WithId<Ride> | null> {
-        return rideCollection.findOne({ driverId, finishedAt: null });
-    },
+  async findRidesByDriver(
+    queryDto: RideQueryInput,
+    driverId: string,
+  ): Promise<{ items: WithId<Ride>[]; totalCount: number }> {
+    const { pageNumber, pageSize, sortBy, sortDirection } = queryDto;
+    const filter = { 'driver.id': driverId };
+    const skip = (pageNumber - 1) * pageSize;
 
-    async createRide(newRide: Ride): Promise<WithId<Ride>> {
-        const insertResult = await rideCollection.insertOne(newRide);
+    const [items, totalCount] = await Promise.all([
+      rideCollection
+        .find(filter)
+        .sort({ [sortBy]: sortDirection })
+        .skip(skip)
+        .limit(pageSize)
+        .toArray(),
+      rideCollection.countDocuments(filter),
+    ]);
+    return { items, totalCount };
+  },
 
-        return { ...newRide, _id: insertResult.insertedId };
-    },
+  async findById(id: string): Promise<WithId<Ride> | null> {
+    return rideCollection.findOne({ _id: new ObjectId(id) });
+  },
+  async findByIdOrFail(id: string): Promise<WithId<Ride>> {
+    const res = await rideCollection.findOne({ _id: new ObjectId(id) });
 
-    async finishedRide(id: string, finishedAt: Date) {
-        const updateResult = await rideCollection.updateOne(
-            {
-                _id: new ObjectId(id),
-            },
-            {
-                $set: {
-                    finishedAt,
-                    updatedAt: new Date(),
-                },
-            },
-        );
+    if (!res) {
+      throw new ReposytoryNotFoundError('Ride not exist');
+    }
+    return res;
+  },
+  async findActiveRideByDriverId(
+    driverId: string,
+  ): Promise<WithId<Ride> | null> {
+    return rideCollection.findOne({ driverId, finishedAt: null });
+  },
 
-        if (updateResult.matchedCount < 1) {
-            throw new Error('Ride not exist');
-        }
+  async createRide(newRide: Ride): Promise<string> {
+    const insertResult = await rideCollection.insertOne(newRide);
 
-        return;
-    },
+    return insertResult.insertedId.toString();
+  },
+
+  async finishRide(id: string, finishedAt: Date) {
+    const updateResult = await rideCollection.updateOne(
+      {
+        _id: new ObjectId(id),
+      },
+      {
+        $set: {
+          finishedAt,
+          updatedAt: new Date(),
+        },
+      },
+    );
+
+    if (updateResult.matchedCount < 1) {
+      throw new Error('Ride not exist');
+    }
+
+    return;
+  },
 };

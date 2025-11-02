@@ -1,34 +1,22 @@
 import { Request, Response } from 'express';
-import { Driver } from '../../types/driver';
-import { DriverInputDto } from '../../dto/driver.input-dto';
+import { DriverCreateInput } from '../../routes/input/driver-create.input';
 import { HttpStatus } from '../../../core/const/http-statuses';
-import { driversReposytory } from '../../reposytories/drivers.reposytory';
-import { mapToDriverViewModel } from '../mappers/map-to-driver-view-model.util';
+import { mapToDriverOutput } from '../mappers/map-to-driver-output.util';
+import { driversService } from '../../application/drivers.service';
+import { errorsHandler } from '../../../core/errors/errors.handler';
 
 export async function createDriverHandler(
-  req: Request<{}, {}, DriverInputDto>,
+  req: Request<{}, {}, DriverCreateInput>,
   res: Response,
 ) {
   try {
-    const newDriver: Driver = {
-      name: req.body.name,
-      phoneNumber: req.body.phoneNumber,
-      email: req.body.email,
-      vehicle: {
-        make: req.body.vehicleMake,
-        model: req.body.vehicleModel,
-        year: req.body.vehicleYear,
-        licensePlate: req.body.vehicleLicensePlate,
-        description: req.body.vehicleDescription,
-        features: req.body.vehicleFeatures,
-      },
-      createdAt: new Date(),
-    };
-
-    const createdDriver = await driversReposytory.create(newDriver);
-    const driverViewModel = mapToDriverViewModel(createdDriver);
-    res.status(HttpStatus.Created).send(driverViewModel);
+    const createdDriverId = await driversService.create(
+      req.body.data.attributes,
+    );
+    const createdDriver = await driversService.findByIdOrFail(createdDriverId);
+    const driverOutput = mapToDriverOutput(createdDriver);
+    res.status(HttpStatus.Created).send(driverOutput);
   } catch (e: unknown) {
-    res.sendStatus(HttpStatus.InternalServerError);
+    errorsHandler(e, res);
   }
 }

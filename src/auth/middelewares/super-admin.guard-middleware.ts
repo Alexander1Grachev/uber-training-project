@@ -23,16 +23,12 @@ export const superAdminGuardMiddleware = (
   }
 
   const credentials = Buffer.from(token, 'base64').toString('utf-8');
-  const [username, password] = credentials.split(':'); 
-  
-  
-  
+  const [username, password] = credentials.split(':');
+
   if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
     res.sendStatus(HttpStatus.Unauthorized);
     return;
   }
 
   next();
-  
-
 };

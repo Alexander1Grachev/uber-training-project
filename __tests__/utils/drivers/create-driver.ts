@@ -1,27 +1,30 @@
 import request from 'supertest';
-import { DriverInputDto } from '../../../src/drivers/dto/driver.input-dto';
 import { Express } from 'express';
 import { HttpStatus } from '../../../src/core/const/http-statuses';
 import { generateBasicAuthToken } from '../generate-admin-auth-token';
 import { DRIVERS_PATH } from '../../../src/core/paths/paths';
 import { getDriverDto } from './get-driver-dto';
-import { DriverViewModel } from '../../../src/drivers/types/driver-view-model';
+import { DriverCreateInput } from '../../../src/drivers/routes/input/driver-create.input';
+import { DriverOutput } from '../../../src/drivers/routes/output/driver.output';
+import { DriverAttributes } from '../../../src/drivers/application/dtos/driver-attributes';
+import { ResourceType } from '../../../src/core/types/resource-type';
 
 export async function createDriver(
-    app: Express,
-    driverDto?: DriverInputDto,
-): Promise<DriverViewModel> {
-    const defaultDriverData: DriverInputDto = getDriverDto();
-    const testDriverData = { ...defaultDriverData, ...driverDto };
+  app: Express,
+  driverDto?: DriverAttributes,
+): Promise<DriverOutput> {
+  const testDriverData: DriverCreateInput = {
+    data: {
+      type: ResourceType.Drivers,
+      attributes: { ...getDriverDto(), ...driverDto },
+    },
+  };
 
-    console.log('🚗 Creating driver:', testDriverData.name);
+  const createdDriverResponse = await request(app)
+    .post(DRIVERS_PATH)
+    .set('Authorization', generateBasicAuthToken())
+    .send(testDriverData)
+    .expect(HttpStatus.Created);
 
-    const createdDriverResponse = await request(app)
-        .post(DRIVERS_PATH)
-        .set('Authorization', generateBasicAuthToken())
-        .send(testDriverData)
-        .expect(HttpStatus.Created);
-
-    console.log('✅ Driver created with ID:', createdDriverResponse.body.id);
-    return createdDriverResponse.body;
+  return createdDriverResponse.body;
 }
